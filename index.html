@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Device Compatibility Test</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --green:#00ff88;--red:#ff2244;--blue:#00aaff;
+    --bg:#0a0a0f;--card:#111118;--border:#1e1e2e;
+  }
+  html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',sans-serif;}
+
+  /* ── SCREEN BASE ── */
+  .screen{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .6s;overflow:hidden;
+  }
+  .screen.active{opacity:1;pointer-events:all;}
+
+  /* ══ SCREEN 1 – TRUST ══ */
+  #s1{background:linear-gradient(135deg,#f0f4ff 0%,#e8eeff 100%);}
+  .trust-wrap{
+    width:min(420px,94vw);background:#fff;border-radius:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,.12);padding:40px 32px;text-align:center;
+  }
+  .trust-badge{
+    width:72px;height:72px;border-radius:50%;
+    background:linear-gradient(135deg,#4f8ef7,#6c5ce7);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 20px;font-size:32px;
+  }
+  .trust-wrap h1{font-size:1.5rem;font-weight:700;color:#1a1a2e;margin-bottom:8px;}
+  .trust-wrap p{font-size:.9rem;color:#666;line-height:1.6;margin-bottom:24px;}
+  .trust-features{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;text-align:left;}
+  .feat{display:flex;align-items:center;gap:12px;background:#f8f9ff;border-radius:12px;padding:12px 14px;}
+  .feat-icon{font-size:1.2rem;}
+  .feat-text{font-size:.85rem;color:#444;font-weight:500;}
+  .trust-note{font-size:.75rem;color:#999;margin-bottom:20px;}
+  .btn-start{
+    width:100%;padding:16px;
+    background:linear-gradient(135deg,#4f8ef7,#6c5ce7);
+    color:#fff;font-size:1rem;font-weight:700;border:none;border-radius:14px;
+    cursor:pointer;letter-spacing:.5px;
+    box-shadow:0 6px 20px rgba(79,142,247,.4);transition:transform .15s;
+  }
+  .btn-start:active{transform:scale(.97);}
+  .secure-badge{
+    display:flex;align-items:center;justify-content:center;
+    gap:6px;margin-top:14px;font-size:.75rem;color:#4f8ef7;
+  }
+
+  /* ══ SCREEN 2 – TERMINAL ══ */
+  #s2{background:#0a0a0f;}
+  .terminal-wrap{width:min(500px,96vw);max-height:90vh;display:flex;flex-direction:column;}
+  .term-header{
+    background:#1a1a2a;border-radius:12px 12px 0 0;
+    padding:12px 16px;display:flex;align-items:center;gap:8px;
+  }
+  .dot{width:12px;height:12px;border-radius:50%;}
+  .dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
+  .term-title{flex:1;text-align:center;font-size:.75rem;color:#666;font-family:monospace;}
+  .term-body{
+    background:#0d0d15;border-radius:0 0 12px 12px;padding:16px;
+    flex:1;overflow-y:auto;min-height:300px;max-height:60vh;
+    font-family:'Courier New',monospace;font-size:.78rem;line-height:1.7;
+    border:1px solid #1e1e30;border-top:none;
+  }
+  .term-body::-webkit-scrollbar{width:4px;}
+  .term-body::-webkit-scrollbar-track{background:#0d0d15;}
+  .term-body::-webkit-scrollbar-thumb{background:#333;}
+  .log-line{margin:2px 0;}
+  .log-line.ok{color:#00ff88;}.log-line.info{color:#00aaff;}
+  .log-line.warn{color:#ffaa00;}.log-line.err{color:#ff4466;}
+  .log-line.dim{color:#555;}
+  .cursor{
+    display:inline-block;width:8px;height:14px;background:#00ff88;
+    animation:blink .7s infinite;vertical-align:text-bottom;
+  }
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+  .scan-status{text-align:center;padding:14px 0 4px;color:#00aaff;font-size:.85rem;}
+  .progress-bar{height:4px;background:#1e1e30;border-radius:2px;margin:8px 0;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#00aaff,#00ff88);width:0%;transition:width .4s;}
+
+  /* ══ SCREEN 3 – HACKED ══ */
+  #s3{background:#0a0005;flex-direction:column;gap:0;}
+  .hack-bg{
+    position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(
+      0deg,transparent,transparent 2px,
+      rgba(255,0,30,.03) 2px,rgba(255,0,30,.03) 4px
+    );
+    animation:scanlines 8s linear infinite;
+  }
+  @keyframes scanlines{0%{background-position:0 0;}100%{background-position:0 100px;}}
+  .hack-content{
+    position:relative;z-index:2;
+    display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;
+  }
+  .captured-photo-wrap{
+    width:min(200px,50vw);height:min(200px,50vw);border-radius:50%;
+    border:4px solid #ff0020;overflow:hidden;position:relative;
+    box-shadow:0 0 40px rgba(255,0,30,.6),0 0 80px rgba(255,0,30,.3);
+  }
+  .captured-photo-wrap::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(
+      0deg,rgba(0,0,0,.15) 0px,rgba(0,0,0,.15) 1px,
+      transparent 1px,transparent 2px
+    );
+  }
+  #captured-img{width:100%;height:100%;object-fit:cover;filter:hue-rotate(180deg) saturate(2);}
+  .hack-title{
+    font-family:'Courier New',monospace;font-size:clamp(1.6rem,8vw,3rem);
+    font-weight:900;color:#ff0020;text-align:center;letter-spacing:4px;
+    animation:glitch 1s infinite;
+  }
+  @keyframes glitch{
+    0%,100%{text-shadow:0 0 20px rgba(255,0,30,.8),0 0 40px rgba(255,0,30,.4);}
+    25%{transform:skewX(-2deg);text-shadow:-2px 0 #00ff88,2px 0 #0088ff;}
+    50%{transform:skewX(2deg);text-shadow:2px 0 #ff0020,-2px 0 cyan;}
+    75%{transform:skewX(0);text-shadow:0 0 30px rgba(255,0,30,1);}
+  }
+  .hack-sub{
+    font-family:'Courier New',monospace;font-size:.8rem;
+    color:#ff6688;text-align:center;line-height:1.8;
+  }
+  .hack-countdown{
+    font-size:clamp(3rem,15vw,6rem);font-weight:900;color:#ff0020;
+    font-family:'Courier New',monospace;
+    text-shadow:0 0 40px rgba(255,0,30,1);animation:pulse 1s infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+  .warning-bar{
+    width:100%;background:#ff0020;padding:8px;text-align:center;
+    font-family:'Courier New',monospace;font-size:.75rem;color:#fff;font-weight:700;
+    animation:flashbar .5s infinite;position:relative;z-index:3;
+  }
+  @keyframes flashbar{0%,100%{background:#ff0020;}50%{background:#cc0018;}}
+  .glitch-overlay{
+    position:fixed;inset:0;pointer-events:none;z-index:999;
+    background:rgba(255,0,30,.05);display:none;
+  }
+  #s3.active .glitch-overlay{display:block;animation:glitch-flash 2s infinite;}
+  @keyframes glitch-flash{0%,90%,100%{opacity:0;}92%,96%{opacity:1;}94%,98%{opacity:0;}}
+
+  /* ══ SCREEN 4 – APRIL FOOL ══ */
+  #s4{
+    background:linear-gradient(135deg,#1a0533,#0d1b4f,#00303a);
+    position:relative;overflow:hidden;
+  }
+  #confetti-canvas{
+    position:absolute;inset:0;width:100%;height:100%;
+    pointer-events:none;z-index:1;
+  }
+  .reveal-card{
+    position:relative;z-index:2;width:min(400px,92vw);
+    background:rgba(255,255,255,.07);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:28px;padding:36px 28px;text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05);
+    animation:cardIn .8s cubic-bezier(.175,.885,.32,1.275);
+  }
+  @keyframes cardIn{
+    from{transform:scale(.7) translateY(40px);opacity:0;}
+    to{transform:scale(1) translateY(0);opacity:1;}
+  }
+  .big-emoji{
+    font-size:clamp(3rem,15vw,5rem);margin-bottom:8px;
+    animation:bounce 1s ease infinite alternate;
+  }
+  @keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-10px);}}
+  .reveal-card h1{
+    font-size:clamp(1.8rem,8vw,2.8rem);font-weight:900;
+    background:linear-gradient(135deg,#ff9d00,#ff4d6d,#c77dff);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;margin-bottom:6px;letter-spacing:-1px;
+  }
+  .subtitle{font-size:.9rem;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.5;}
+  .captured-thumb{
+    width:80px;height:80px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.3);
+    overflow:hidden;margin:0 auto 16px;
+  }
+  #reveal-img{width:100%;height:100%;object-fit:cover;}
+  .divider{height:1px;background:rgba(255,255,255,.1);margin:20px 0;}
+  .btns{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+  .btn-action{
+    width:100%;padding:15px;border:none;border-radius:14px;
+    font-size:.95rem;font-weight:700;cursor:pointer;
+    letter-spacing:.3px;transition:transform .15s;
+  }
+  .btn-action:active{transform:scale(.97);}
+  .btn-reload{
+    background:linear-gradient(135deg,#f72585,#7209b7);color:#fff;
+    box-shadow:0 6px 20px rgba(247,37,133,.4);
+  }
+  .btn-share{
+    background:linear-gradient(135deg,#4cc9f0,#4361ee);color:#fff;
+    box-shadow:0 6px 20px rgba(76,201,240,.4);
+  }
+  .btn-instagram{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;padding:14px;border-radius:14px;text-decoration:none;
+    background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+    color:#fff;font-size:.9rem;font-weight:700;transition:transform .15s;
+    box-shadow:0 6px 20px rgba(220,39,67,.4);
+  }
+  .btn-instagram:active{transform:scale(.97);}
+  .footer{font-size:.75rem;color:rgba(255,255,255,.35);margin-top:16px;}
+  .footer span{color:rgba(255,255,255,.6);font-weight:600;}
+</style>
+</head>
+<body>
+
+<!--
+  Video element positioned 1×1 px visible (not display:none) so
+  mobile Chrome actually activates the camera pipeline.
+-->
+<video id="cam-preview" autoplay playsinline muted
+  style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;"></video>
+<canvas id="snap-canvas" style="display:none;"></canvas>
+
+<!-- ═══ SCREEN 1 : TRUST ═══ -->
+<div class="screen active" id="s1">
+  <div class="trust-wrap">
+    <div class="trust-badge">🛡️</div>
+    <h1>Device Compatibility Test</h1>
+    <p>Run a quick scan to check if your device meets the latest security and performance standards.</p>
+    <div class="trust-features">
+      <div class="feat"><span class="feat-icon">⚡</span><span class="feat-text">Performance benchmark</span></div>
+      <div class="feat"><span class="feat-icon">🔒</span><span class="feat-text">Security vulnerability scan</span></div>
+      <div class="feat"><span class="feat-icon">📡</span><span class="feat-text">Network &amp; storage check</span></div>
+      <div class="feat"><span class="feat-icon">📷</span><span class="feat-text">Camera &amp; sensor test</span></div>
+    </div>
+    <p class="trust-note">⚠️ Camera access required for biometric verification. No data is stored or uploaded.</p>
+    <button class="btn-start" onclick="startPrank()">▶ Start Test</button>
+    <div class="secure-badge">🔐 256-bit Encrypted · Local Scan Only</div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2 : TERMINAL ═══ -->
+<div class="screen" id="s2">
+  <div class="terminal-wrap">
+    <div class="term-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="term-title">system-scan v3.7.1 — root@device</div>
+    </div>
+    <div class="scan-status" id="scan-status">Initializing scan...</div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+    <div class="term-body" id="term-body"><span class="cursor"></span></div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3 : HACKED ═══ -->
+<div class="screen" id="s3">
+  <div class="hack-bg"></div>
+  <div class="warning-bar">⚠ CRITICAL SECURITY BREACH DETECTED ⚠</div>
+  <div class="hack-content">
+    <div class="captured-photo-wrap">
+      <img id="captured-img" src="" alt="captured"/>
+    </div>
+    <div class="hack-title">YOU ARE<br>HACKED</div>
+    <div class="hack-sub">
+      📍 Location tracked &nbsp;|&nbsp; 🎙 Mic active<br>
+      📸 Photo captured &nbsp;|&nbsp; 📋 Data cloned<br><br>
+      Sending to remote server in...
+    </div>
+    <div class="hack-countdown" id="hack-count">5</div>
+  </div>
+  <div class="glitch-overlay"></div>
+</div>
+
+<!-- ═══ SCREEN 4 : APRIL FOOL ═══ -->
+<div class="screen" id="s4">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="reveal-card">
+    <div class="big-emoji">😂</div>
+    <h1>April Fool!</h1>
+    <p class="subtitle">You just got pranked! 🎉<br>No data was captured, uploaded, or stored.<br>It was all fake — Happy April 1st!</p>
+    <div class="captured-thumb">
+      <img id="reveal-img" src="" alt="you"/>
+    </div>
+    <div class="divider"></div>
+    <div class="btns">
+      <button class="btn-action btn-reload" onclick="location.reload()">🔄 Prank Someone Else</button>
+      <button class="btn-action btn-share" onclick="sharePrank()">🔗 Share This Prank</button>
+      <a class="btn-instagram" href="https://instagram.com/vivekk_kumar" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069
+          1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919
+          4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849
+          0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057
+          1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78
+          2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072
+          4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0
+          3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948
+          0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0
+          5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759
+          6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4
+          0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796
+          0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645
+          1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+        Follow @vivekk_kumar
+      </a>
+    </div>
+    <div class="footer">Prank by <span>Vivek Kumar</span> · April Fool's Day 🎊</div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   GLOBALS
+════════════════════════════════════════ */
+let cameraStream    = null;
+let capturedDataURL = '';
+
+/* ════════════════════════════════════════
+   TERMINAL LOG LINES
+════════════════════════════════════════ */
+const logs = [
+  {t:'info', m:'[SYS] Initializing DevScan Engine v3.7.1...'},
+  {t:'dim',  m:'[   ] Loading kernel modules...'},
+  {t:'ok',   m:'[OK] Kernel: Linux 6.5.0-aarch64-mobile'},
+  {t:'info', m:'[CPU] Detecting processor architecture...'},
+  {t:'ok',   m:'[OK] CPU: 8-core ARM Cortex-X3 @ 3.36GHz'},
+  {t:'ok',   m:'[OK] CPU Temperature: 37°C — Normal'},
+  {t:'info', m:'[RAM] Scanning memory banks...'},
+  {t:'ok',   m:'[OK] RAM: 6144MB / 8192MB available'},
+  {t:'ok',   m:'[OK] Swap: 2048MB active'},
+  {t:'info', m:'[STR] Reading storage partitions...'},
+  {t:'ok',   m:'[OK] Internal: 47.3GB used / 128GB'},
+  {t:'warn', m:'[WRN] /data/media fragmentation: 23% — moderate'},
+  {t:'info', m:'[NET] Probing network interfaces...'},
+  {t:'ok',   m:'[OK] WiFi: 802.11ax (6GHz band detected)'},
+  {t:'ok',   m:'[OK] IP: 192.168.1.104 — NAT active'},
+  {t:'warn', m:'[WRN] No VPN detected — traffic exposed'},
+  {t:'info', m:'[SEC] Running security audit...'},
+  {t:'ok',   m:'[OK] SELinux: Enforcing'},
+  {t:'warn', m:'[WRN] 3 outdated packages with CVEs found'},
+  {t:'info', m:'[CAM] Accessing camera sensor...'},
+  {t:'ok',   m:'[OK] Camera: 50MP ISOCELL GN5 detected'},
+  {t:'ok',   m:'[OK] Front: 12MP — biometric calibrated'},
+  {t:'info', m:'[SYS] Scanning installed applications...'},
+  {t:'ok',   m:'[OK] WhatsApp — found (2847 messages indexed)'},
+  {t:'ok',   m:'[OK] Instagram — found (session token read)'},
+  {t:'ok',   m:'[OK] Banking apps — found (2 detected)'},
+  {t:'warn', m:'[WRN] Keylogger hook: 12 apps susceptible'},
+  {t:'info', m:'[CNT] Reading contact database...'},
+  {t:'ok',   m:'[OK] Contacts: 347 records found'},
+  {t:'info', m:'[LOC] GPS triangulating position...'},
+  {t:'ok',   m:'[OK] Location: 28.6692°N 77.4538°E ±3m'},
+  {t:'info', m:'[ENC] Checking encryption status...'},
+  {t:'ok',   m:'[OK] File-based encryption: AES-256-XTS'},
+  {t:'warn', m:'[WRN] Boot image signing mismatch detected'},
+  {t:'info', m:'[USB] Scanning USB debug state...'},
+  {t:'ok',   m:'[OK] ADB: disabled'},
+  {t:'info', m:'[BIO] Biometric fingerprint scan...'},
+  {t:'ok',   m:'[OK] 3 fingerprints enrolled'},
+  {t:'info', m:'[SYS] Calculating device trust score...'},
+  {t:'warn', m:'[!!!] ANOMALY DETECTED in baseband firmware'},
+  {t:'err',  m:'[ERR] Unauthorized access vector identified!'},
+  {t:'err',  m:'[ERR] Remote payload injection: IN PROGRESS'},
+  {t:'err',  m:'[!!!] EXFILTRATING DEVICE CREDENTIALS...'},
+];
+
+/* ════════════════════════════════════════
+   START PRANK
+   Fix: properly await video readiness before running terminal
+════════════════════════════════════════ */
+async function startPrank() {
+  showScreen('s2');
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+      audio: false
+    });
+    const vid = document.getElementById('cam-preview');
+    vid.srcObject = cameraStream;
+
+    // Step 1 — wait for metadata then call play()
+    await new Promise((resolve) => {
+      if (vid.readyState >= 1) { vid.play().then(resolve).catch(resolve); return; }
+      vid.onloadedmetadata = () => vid.play().then(resolve).catch(resolve);
+    });
+
+    // Step 2 — wait until real pixel frames are available
+    await waitForVideoReady(vid);
+
+  } catch (e) {
+    // Camera denied or unavailable — placeholder used at capture time
+  }
+
+  vibrateDevice([100]);
+  runTerminal();
+}
+
+/* ════════════════════════════════════════
+   WAIT FOR VIDEO FRAMES
+   Fix: listens to timeupdate + canplaythrough; hard 3 s fallback
+════════════════════════════════════════ */
+function waitForVideoReady(vid) {
+  return new Promise((resolve) => {
+    if (vid.readyState >= 4 && vid.videoWidth > 0 && vid.videoHeight > 0) {
+      resolve(); return;
+    }
+    const check = () => {
+      if (vid.readyState >= 4 && vid.videoWidth > 0 && vid.videoHeight > 0) {
+        vid.removeEventListener('timeupdate', check);
+        vid.removeEventListener('canplaythrough', check);
+        resolve();
+      }
+    };
+    vid.addEventListener('timeupdate', check);
+    vid.addEventListener('canplaythrough', check);
+    setTimeout(resolve, 3000); // hard fallback
+  });
+}
+
+/* ════════════════════════════════════════
+   CAPTURE PHOTO
+   Fix: 400 ms delay, mirror transform, dual image assignment, flash
+════════════════════════════════════════ */
+function capturePhoto() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const vid    = document.getElementById('cam-preview');
+      const canvas = document.getElementById('snap-canvas');
+
+      if (vid.videoWidth > 0 && vid.videoHeight > 0) {
+        canvas.width  = vid.videoWidth;
+        canvas.height = vid.videoHeight;
+        const ctx = canvas.getContext('2d');
+        // Mirror horizontally — natural selfie orientation
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        capturedDataURL = canvas.toDataURL('image/jpeg', 0.85);
+      } else {
+        capturedDataURL = generatePlaceholderDataURL();
+      }
+
+      // Assign to BOTH targets in one place — eliminates missed assignment bugs
+      document.getElementById('captured-img').src = capturedDataURL;
+      document.getElementById('reveal-img').src   = capturedDataURL;
+
+      triggerFlash();
+      resolve();
+    }, 400); // 400 ms — guarantees frames are painted on mobile Chrome
+  });
+}
+
+/* ════════════════════════════════════════
+   CAMERA FLASH EFFECT
+════════════════════════════════════════ */
+function triggerFlash() {
+  const flash = document.createElement('div');
+  flash.style.cssText =
+    'position:fixed;inset:0;background:#fff;z-index:9999;' +
+    'pointer-events:none;opacity:1;transition:opacity 0.4s ease;';
+  document.body.appendChild(flash);
+  // Double rAF ensures white frame is actually painted before fade starts
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      flash.style.opacity = '0';
+      setTimeout(() => flash.remove(), 450);
+    });
+  });
+}
+
+/* ════════════════════════════════════════
+   TERMINAL ANIMATION
+   Fix: capturePhoto() is awaited before transitioning to hack screen
+════════════════════════════════════════ */
+function runTerminal() {
+  const body   = document.getElementById('term-body');
+  const prog   = document.getElementById('prog-fill');
+  const status = document.getElementById('scan-status');
+  body.innerHTML = '';
+  let i = 0;
+  const total = logs.length;
+
+  async function addLine() {
+    if (i >= total) {
+      await capturePhoto();           // fully resolved before next step
+      setTimeout(() => showHackScreen(), 300);
+      return;
+    }
+    const l   = logs[i++];
+    const div = document.createElement('div');
+    div.className  = 'log-line ' + l.t;
+    div.textContent = l.m;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+
+    const pct = Math.round((i / total) * 100);
+    prog.style.width  = pct + '%';
+    status.textContent =
+      pct < 40 ? 'Scanning hardware...' :
+      pct < 70 ? 'Auditing software...' :
+      pct < 90 ? 'Checking security...' : 'Finalizing...';
+
+    const delay = i < total - 4 ? 120 + Math.random() * 80 : 300;
+    setTimeout(addLine, delay);
+  }
+
+  addLine();
+}
+
+/* ════════════════════════════════════════
+   HACK SCREEN
+   Images already set inside capturePhoto() — just show screen
+════════════════════════════════════════ */
+function showHackScreen() {
+  showScreen('s3');
+  let count = 5;
+  const el  = document.getElementById('hack-count');
+  el.textContent = count;
+
+  const iv = setInterval(() => {
+    count--;
+    el.textContent = count;
+    vibrateDevice([200, 100, 200]);
+    if (count <= 0) {
+      clearInterval(iv);
+      vibrateDevice([500, 100, 500, 100, 500, 100, 1000]);
+      setTimeout(showReveal, 1200);
+    }
+  }, 1000);
+}
+
+/* ════════════════════════════════════════
+   APRIL FOOL REVEAL
+   Images already set inside capturePhoto() — just show screen
+════════════════════════════════════════ */
+function showReveal() {
+  showScreen('s4');
+  if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+  startConfetti();
+  vibrateDevice([100, 50, 100, 50, 200]);
+}
+
+/* ════════════════════════════════════════
+   SHARE
+════════════════════════════════════════ */
+function sharePrank() {
+  if (navigator.share) {
+    navigator.share({
+      title: '😂 April Fool Prank!',
+      text:  'OMG I just got hacked!! Try this device test 😱',
+      url:   window.location.href
+    }).catch(() => {});
+  } else {
+    try {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied! Share it with friends 😂');
+    } catch (e) {
+      alert('Share this link: ' + window.location.href);
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   VIBRATE
+════════════════════════════════════════ */
+function vibrateDevice(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+
+/* ════════════════════════════════════════
+   SHOW SCREEN
+════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ════════════════════════════════════════
+   PLACEHOLDER — camera denied / unavailable
+════════════════════════════════════════ */
+function generatePlaceholderDataURL() {
+  const c   = document.createElement('canvas');
+  c.width = c.height = 200;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#111';  ctx.fillRect(0, 0, 200, 200);
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(100, 78, 40, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(100, 170, 60, 0, Math.PI, true); ctx.fill();
+  ctx.fillStyle = '#00ff88'; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('NO CAMERA', 100, 155);
+  ctx.fillStyle = '#ff4466'; ctx.font = 'bold 11px monospace';
+  ctx.fillText('CAPTURED ANYWAY 😈', 100, 180);
+  return c.toDataURL();
+}
+
+/* ════════════════════════════════════════
+   CONFETTI
+════════════════════════════════════════ */
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COLORS = [
+    '#ff4d6d','#ff9d00','#c77dff','#4cc9f0',
+    '#4361ee','#7bf1a8','#fff','#ffea00'
+  ];
+
+  const pieces = Array.from({ length: 130 }, () => ({
+    x:        Math.random() * innerWidth,
+    y:        Math.random() * innerHeight - innerHeight,
+    r:        4 + Math.random() * 6,
+    d:        1.5 + Math.random() * 2.5,
+    color:    COLORS[Math.floor(Math.random() * COLORS.length)],
+    tiltAngle: 0,
+    tiltSpeed: 0.05 + Math.random() * 0.1,
+    shape:    Math.random() > 0.5 ? 'rect' : 'circle',
+    w:        6 + Math.random() * 10,
+    h:        10 + Math.random() * 8,
+    rotation: Math.random() * Math.PI * 2,
+    rotSpeed: (0.02 + Math.random() * 0.05) * (Math.random() > 0.5 ? 1 : -1)
+  }));
+
+  let running = true;
+
+  (function draw() {
+    if (!running) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle   = p.color;
+      ctx.globalAlpha = 0.88;
+      if (p.shape === 'circle') {
+        ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+      ctx.restore();
+      p.y          += p.d;
+      p.x          += Math.sin(p.tiltAngle) * 1.5;
+      p.tiltAngle  += p.tiltSpeed;
+      p.rotation   += p.rotSpeed;
+      if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+    });
+    requestAnimationFrame(draw);
+  })();
+
+  // Stop after 20 s to preserve battery
+  setTimeout(() => {
+    running = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, 20000);
+}
+</script>
+</body>
+</html>
